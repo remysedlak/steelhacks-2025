@@ -1,54 +1,104 @@
 import { useState, useEffect } from 'react'
+import { 
+  awardGoalCompletion, 
+  awardGoalCreation, 
+  formatCurrency, 
+  REWARDS 
+} from '../utils/currencySystem'
 
 const GoalsPage = () => {
   const [goals, setGoals] = useState([])
   const [newGoal, setNewGoal] = useState('')
   const [filter, setFilter] = useState('all') // all, active, completed
+  const [isInitialLoad, setIsInitialLoad] = useState(true) // Track initial load
 
   // Load goals from localStorage
   useEffect(() => {
     const savedGoals = localStorage.getItem('userGoals')
-    if (savedGoals) {
-      setGoals(JSON.parse(savedGoals))
+    if (savedGoals && savedGoals !== 'undefined' && savedGoals !== 'null') {
+      try {
+        const parsedGoals = JSON.parse(savedGoals)
+        if (Array.isArray(parsedGoals)) {
+          setGoals(parsedGoals)
+        } else {
+          setGoals([])
+        }
+      } catch (error) {
+        console.error('Error parsing saved goals:', error)
+        setGoals([])
+      }
+    } else {
+      setGoals([])
     }
+    setIsInitialLoad(false) // Mark initial load as complete
   }, [])
 
-  // Save goals to localStorage whenever goals change
+  // Save goals to localStorage whenever goals change (but not on initial load)
   useEffect(() => {
-    localStorage.setItem('userGoals', JSON.stringify(goals))
-  }, [goals])
+    if (!isInitialLoad) { // Only save after initial load is complete
+      try {
+        localStorage.setItem('userGoals', JSON.stringify(goals))
+      } catch (error) {
+        console.error('Error saving goals to localStorage:', error)
+      }
+    }
+  }, [goals, isInitialLoad])
 
   // Add a new goal
   const addGoal = () => {
     if (newGoal.trim()) {
+      const goalId = Date.now()
       const goal = {
-        id: Date.now(),
+        id: goalId,
         text: newGoal.trim(),
         completed: false,
         createdAt: new Date().toISOString(),
         completedAt: null
       }
-      setGoals([goal, ...goals])
+      
+      const updatedGoals = [goal, ...goals]
+      setGoals(updatedGoals)
       setNewGoal('')
+      
+      // Award currency for creating a goal and trigger currency update
+      setTimeout(() => {
+        awardGoalCreation(goalId)
+        window.dispatchEvent(new CustomEvent('currencyUpdated'))
+      }, 100) // Small delay to ensure state is updated
     }
   }
 
   // Toggle goal completion
   const toggleGoal = (id) => {
-    setGoals(goals.map(goal => 
-      goal.id === id 
-        ? { 
-            ...goal, 
-            completed: !goal.completed,
-            completedAt: !goal.completed ? new Date().toISOString() : null
-          }
-        : goal
-    ))
+    const updatedGoals = goals.map(goal => {
+      if (goal.id === id) {
+        const wasCompleted = goal.completed
+        const newCompleted = !goal.completed
+        
+        // Award currency only when completing (not uncompleting)
+        if (!wasCompleted && newCompleted) {
+          setTimeout(() => {
+            awardGoalCompletion(goal.id)
+            window.dispatchEvent(new CustomEvent('currencyUpdated'))
+          }, 100)
+        }
+        
+        return { 
+          ...goal, 
+          completed: newCompleted,
+          completedAt: newCompleted ? new Date().toISOString() : null
+        }
+      }
+      return goal
+    })
+    
+    setGoals(updatedGoals)
   }
 
   // Delete a goal
   const deleteGoal = (id) => {
-    setGoals(goals.filter(goal => goal.id !== id))
+    const updatedGoals = goals.filter(goal => goal.id !== id)
+    setGoals(updatedGoals)
   }
 
   // Filter goals based on current filter
@@ -125,6 +175,9 @@ const GoalsPage = () => {
           >
             Add Goal
           </button>
+        </div>
+        <div className="mt-3 text-sm text-gray-600">
+          💡 Creating a goal earns you {formatCurrency(REWARDS.GOAL_CREATE)} • Completing it earns {formatCurrency(REWARDS.GOAL_COMPLETE)}!
         </div>
       </div>
 
