@@ -1,0 +1,60 @@
+{
+  "format": "layers-model",
+  "generatedBy": "keras v2.13.0",
+  "convertedBy": "direct extraction",
+  "modelTopology": {
+    "class_name": "Sequential",
+    "config": {
+      "name": "sequential",
+      "layers": [
+        {
+          "class_name": "Dense",
+          "config": {
+            "units": 1,
+            "activation": "sigmoid",
+            "use_bias": true,
+            "name": "prediction",
+            "trainable": true,
+            "batch_input_shape": [
+              null,
+              3
+            ],
+            "dtype": "float32",
+            "kernel_initializer": {
+              "class_name": "GlorotUniform",
+              "config": {}
+            },
+            "bias_initializer": {
+              "class_name": "Zeros",
+              "config": {}
+            }
+          }
+        }
+      ]
+    }
+  },
+  "weightsManifest": [
+    {
+      "paths": [
+        "group1-shard1of1.bin"
+      ],
+      "weights": [
+        {
+          "name": "prediction/kernel",
+          "shape": [
+            3,
+            1
+          ],
+          "dtype": "float32"
+        },
+        {
+          "name": "prediction/bias",
+          "shape": [
+            1
+          ],
+          "dtype": "float32"
+        }
+      ]
+    }
+  ]
+}
