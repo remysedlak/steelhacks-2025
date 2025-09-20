@@ -14,7 +14,9 @@ export const generatePath = (chartData, chartPadding, dataWidth, dataHeight, sco
   
   return chartData.map((point, index) => {
     const x = chartPadding.left + (index / Math.max(1, chartData.length - 1)) * dataWidth
-    const y = chartPadding.top + (point.anxietyScore / scoreRange) * dataHeight // Flipped: higher anxiety = lower on chart
+    // Fix: Use the actual anxiety score range (0.5-1.0) for proper scaling
+    const normalizedScore = (point.anxietyScore - 0.5) / 0.5 // Convert 0.5-1.0 to 0-1
+    const y = chartPadding.top + normalizedScore * dataHeight
     return `${index === 0 ? 'M' : 'L'} ${x} ${y}`
   }).join(' ')
 }

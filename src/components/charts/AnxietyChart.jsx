@@ -43,9 +43,11 @@ const AnxietyChart = ({ chartData }) => {
             fill="url(#grid)"
           />
           
-          {/* Y-axis labels for anxiety score (0.0 at top, 1.0 at bottom) */}
-          {[0.0, 0.2, 0.4, 0.6, 0.8, 1.0].map((value) => {
-            const y = chartPadding.top + (value / 1.0) * dataHeight
+          {/* Y-axis labels for anxiety score (0.5 at top, 1.0 at bottom) */}
+          {[0.5, 0.6, 0.7, 0.8, 0.9, 1.0].map((value) => {
+            // Normalize the value to 0-1 range for positioning
+            const normalizedValue = (value - 0.5) / 0.5
+            const y = chartPadding.top + normalizedValue * dataHeight
             return (
               <g key={value}>
                 <line
@@ -99,7 +101,9 @@ const AnxietyChart = ({ chartData }) => {
           {/* Data points */}
           {chartData.map((point, index) => {
             const x = chartPadding.left + (index / Math.max(1, chartData.length - 1)) * dataWidth
-            const y = chartPadding.top + (point.anxietyScore / scoreRange) * dataHeight // Flipped Y-axis
+            // Fix: Use the actual anxiety score range (0.5-1.0) for proper scaling
+            const normalizedScore = (point.anxietyScore - 0.5) / 0.5 // Convert 0.5-1.0 to 0-1
+            const y = chartPadding.top + normalizedScore * dataHeight
             
             const pointColor = getAnxietyScoreColor(point.anxietyScore)
             

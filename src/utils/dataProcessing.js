@@ -153,7 +153,7 @@ export const getMoodTrend = (filteredEntries) => {
  * @returns {Array} Chart data points
  */
 export const getAnxietyChartData = (filteredEntries) => {
-  // Group entries by date to get the final anxiety score for each day
+  // Group entries by date to get the anxiety scores for each day
   const entriesByDate = {}
   
   filteredEntries.forEach(entry => {
@@ -163,10 +163,9 @@ export const getAnxietyChartData = (filteredEntries) => {
     }
     entriesByDate[dateKey].push(entry)
   })
-  
-  // Calculate cumulative anxiety scores day by day (like Duolingo)
+
+  // Calculate daily anxiety scores based on actual stress data
   const dailyScores = []
-  let currentAnxietyScore = 0.5 // Starting baseline
   
   // Sort dates chronologically
   const sortedDates = Object.keys(entriesByDate).sort((a, b) => new Date(a) - new Date(b))
@@ -175,33 +174,35 @@ export const getAnxietyChartData = (filteredEntries) => {
     const dayEntries = entriesByDate[dateKey].sort((a, b) => new Date(a.date) - new Date(b.date))
     
     // Process all stress assessments for the day
-    let dayStressSum = 0
+    let dayAnxietySum = 0
     let dayStressCount = 0
     
     dayEntries.forEach(entry => {
-      if (entry.stressData?.result?.percentage !== undefined) {
-        dayStressSum += entry.stressData.result.percentage
+      if (entry.stressData?.result?.lifelongScore !== undefined) {
+        // Use the actual anxiety score from the stress assessment
+        dayAnxietySum += parseFloat(entry.stressData.result.lifelongScore)
         dayStressCount++
       }
     })
     
     if (dayStressCount > 0) {
-      // Calculate average stress for the day (0-100 scale)
-      const avgDayStress = dayStressSum / dayStressCount
+      // Calculate average anxiety score for the day
+      const avgAnxietyScore = dayAnxietySum / dayStressCount
       
-      // Convert stress percentage to anxiety score adjustment
-      // Higher stress (lower percentage) = increase anxiety score (worse)
-      // Lower stress (higher percentage) = decrease anxiety score (better)
-      const stressAdjustment = (50 - avgDayStress) / 1000 // Inverted: higher stress increases anxiety score
-      
-      // Update cumulative anxiety score
-      currentAnxietyScore = Math.max(0.5, Math.min(1.0, currentAnxietyScore + stressAdjustment))
+      // Calculate average stress percentage for display
+      let dayStressSum = 0
+      dayEntries.forEach(entry => {
+        if (entry.stressData?.result?.percentage !== undefined) {
+          dayStressSum += entry.stressData.result.percentage
+        }
+      })
+      const avgStress = dayStressSum / dayStressCount
       
       dailyScores.push({
         date: new Date(dateKey),
         dateString: new Date(dateKey).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        anxietyScore: currentAnxietyScore,
-        avgStress: avgDayStress,
+        anxietyScore: avgAnxietyScore,
+        avgStress: avgStress,
         mood: dayEntries[dayEntries.length - 1].mood, // Last mood of the day
         fullDate: new Date(dateKey).toLocaleDateString(),
         entryCount: dayEntries.length,
