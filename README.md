@@ -1,12 +1,15 @@
-# React + Vite
+# SteelHacks 2025
+## Will, Remy, Hersh
+### The Bad Batch (3rd Place in "Predict The Unpredictable")
+#### Rooted Reflections (anxiety predictor)
+<img width="805" height="400" alt="image" src="https://github.com/user-attachments/assets/be2d9378-1515-49f3-b610-0e0aff8b51b2" />
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+- React, Tailwind SPA
+- Tensor.js Keras model
+- Kaggle Dataset (7000 rows)
+- Anxiety Prediction
+- Customizable Journals
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+##### In-app Plant to take care of
+<img width="400" height="241" alt="image" src="https://github.com/user-attachments/assets/c7f0713f-98bd-4b07-8f14-9caaf6ed460d" />
