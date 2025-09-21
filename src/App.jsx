@@ -1,74 +1,54 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import QAPage from './pages/QAPage'
 import TrackerPage from './pages/TrackerPage'
 import ProgressPage from './pages/ProgressPage'
 import ProfilePage from './pages/ProfilePage'
 import GoalsPage from './pages/GoalsPage'
 import CurrencyDisplay from './components/ui/CurrencyDisplay'
+import StressLevelAnalysis from './components/analysis/StressLevelAnalysis'
+import { getFilteredEntries, getStressStats, getAnxietyChartData } from './utils/dataProcessing'
 import './index.css'
 
 // Home component
 const HomePage = () => {
+  const [entries, setEntries] = useState([])
+
+  // Load entries from localStorage
+  useEffect(() => {
+    const savedEntries = localStorage.getItem('mentalHealthEntries')
+    if (savedEntries) {
+      setEntries(JSON.parse(savedEntries))
+    }
+  }, [])
+
+  // Process data for stress analysis (show recent week's data)
+  const filteredEntries = getFilteredEntries(entries, 'week')
+  const stressStats = getStressStats(filteredEntries)
+  const chartData = getAnxietyChartData(filteredEntries)
+
   return (
-    <div className="max-w-4xl mx-auto p-6 text-center">
+    <div className="max-w-4xl mx-auto p-6">
       <div className="mb-8 animate-fade-in">
-        <div className="flex items-center justify-center space-x-3 mb-4">
-          <img src="icon.png" alt="Logo" className="h-12" />
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Rooted Reflections
-          </h1>
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <img src="icon.png" alt="Logo" className="h-12" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Rooted Reflections
+            </h1>
+          </div>
+          <p className=" text-center text-xl text-gray-600 mb-8 leading-relaxed">
+            Your companion for mental health and wellness
+          </p>
         </div>
-        <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-          Your companion for mental health and wellness
-        </p>
-      </div>
+      {/* Stress Level Analysis Chart at the top */}
+      {stressStats && (
+        <StressLevelAnalysis stressStats={stressStats} chartData={chartData} />
+      )}
+      
+      <div className="text-center">
+        
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
-        <Link 
-          to="/qa" 
-          className="group block p-8 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-blue-200 hover:-translate-y-2 transform"
-        >
-          <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">❓</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-3 group-hover:text-blue-600 transition-colors">Q&A</h3>
-          <p className="text-gray-600 leading-relaxed">Find answers to common mental health questions</p>
-        </Link>
-
-        <Link 
-          to="/tracker" 
-          className="group block p-8 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-green-200 hover:-translate-y-2 transform"
-        >
-          <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">📝</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-3 group-hover:text-green-600 transition-colors">Tracker</h3>
-          <p className="text-gray-600 leading-relaxed">Log your daily mood, sleep, activities, and stress levels with AI assessment</p>
-        </Link>
-
-        <Link 
-          to="/progress" 
-          className="group block p-8 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-purple-200 hover:-translate-y-2 transform"
-        >
-          <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">📊</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-3 group-hover:text-purple-600 transition-colors">Progress</h3>
-          <p className="text-gray-600 leading-relaxed">View your mental health journey and patterns</p>
-        </Link>
-
-        <Link 
-          to="/goals" 
-          className="group block p-8 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-green-200 hover:-translate-y-2 transform"
-        >
-          <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">🎯</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-3 group-hover:text-green-600 transition-colors">Goals</h3>
-          <p className="text-gray-600 leading-relaxed">Set and track your personal goals and achievements</p>
-        </Link>
-
-        <Link 
-          to="/profile" 
-          className="group block p-8 bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-pink-200 hover:-translate-y-2 transform"
-        >
-          <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">🏆</div>
-          <h3 className="text-xl font-semibold text-gray-800 mb-3 group-hover:text-pink-600 transition-colors">Profile</h3>
-          <p className="text-gray-600 leading-relaxed">Earn badges and track your achievements</p>
-        </Link>
-      </div>
+    
 
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
         <h2 className="text-3xl font-semibold text-blue-800 mb-6">Welcome to Your Mental Health Journey</h2>
@@ -89,6 +69,7 @@ const HomePage = () => {
             <span className="font-medium">AI-powered stress assessment with reflection</span>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

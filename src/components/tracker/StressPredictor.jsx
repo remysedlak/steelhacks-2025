@@ -12,6 +12,8 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
   const [stressResult, setStressResult] = useState(null)
   const [reflectionResponses, setReflectionResponses] = useState({})
   const [showStressPredictor, setShowStressPredictor] = useState(false)
+  const [manualAnxietyScore, setManualAnxietyScore] = useState(0.5)
+  const [useManualRating, setUseManualRating] = useState(false)
 
   // Reflection questions based on output score ranges
   const reflectionQuestions = {
@@ -132,6 +134,12 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
   }
 
   const predict = async () => {
+    if (useManualRating) {
+      // Use manual anxiety score instead of AI prediction
+      displayResult(manualAnxietyScore)
+      return
+    }
+    
     if (!model) {
       alert('Model not loaded yet!')
       return
@@ -165,34 +173,35 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
   }
 
   const displayResult = (stressScore) => {
-    // Convert model output to lifelong anxiety score (0.5-1.0 scale)
-    // Lower model output = higher anxiety, so we invert it
-    // Model outputs ~0-1, we want 0.5-1.0 where 1.0 = best mental health
-    const lifelongAnxietyScore = 0.5 + (stressScore * 0.5)
+    // Convert model output to lifelong anxiety score (0-1.0 scale)
+    // For manual ratings: use score directly (1.0 = high anxiety, 0.0 = no anxiety)
+    // For AI model: invert the score since model outputs wellness (1.0 = good, 0.0 = bad)
+    const lifelongAnxietyScore = useManualRating ? stressScore : (1.0 - stressScore)
     const percentage = Math.round(lifelongAnxietyScore * 100)
     
-    // Get reflection questions based on the lifelong score
-    const questionData = getQuestionsForScore(lifelongAnxietyScore)
+    // Get reflection questions based on the lifelong score (inverted for questions)
+    const questionScore = 1.0 - lifelongAnxietyScore // Invert for question selection
+    const questionData = getQuestionsForScore(questionScore)
     
     let category, className, emoji, message
     
-    // Categorize based on lifelong anxiety score (0.5-1.0 scale)
-    if (lifelongAnxietyScore <= 0.60) {
+    // Categorize based on anxiety score (1.0 = high anxiety, 0.0 = no anxiety)
+    if (lifelongAnxietyScore >= 0.80) {
       category = 'High Anxiety (Seek Support)'
       className = 'struggling'
       emoji = '😰'
       message = 'Your anxiety levels are quite high. Consider reaching out for professional support - you don\'t have to go through this alone.'
-    } else if (lifelongAnxietyScore <= 0.70) {
+    } else if (lifelongAnxietyScore >= 0.60) {
       category = 'Moderate Anxiety (Building Resilience)'
       className = 'low'
       emoji = '😔'
       message = 'You\'re experiencing some anxiety, but you\'re building resilience. Focus on healthy coping strategies and self-care.'
-    } else if (lifelongAnxietyScore <= 0.80) {
+    } else if (lifelongAnxietyScore >= 0.40) {
       category = 'Balanced State (Steady Progress)'
       className = 'neutral'
       emoji = '😐'
       message = 'You\'re in a balanced emotional state. This is a good foundation for continued growth and wellbeing.'
-    } else if (lifelongAnxietyScore <= 0.90) {
+    } else if (lifelongAnxietyScore >= 0.20) {
       category = 'Low Anxiety (Thriving)'
       className = 'good'
       emoji = '😊'
@@ -212,7 +221,8 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
       percentage,
       lifelongScore: lifelongAnxietyScore.toFixed(3),
       rawModelOutput: stressScore.toFixed(4),
-      questionData
+      questionData,
+      isManualRating: useManualRating
     }
     
     setStressResult(result)
@@ -257,6 +267,8 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
     setStressResult(null)
     setReflectionResponses({})
     setShowStressPredictor(false)
+    setUseManualRating(false)
+    setManualAnxietyScore(0.5)
   }
 
   // Expose reset function to parent
@@ -272,7 +284,7 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
         className="flex items-center text-lg font-semibold text-purple-800 mb-4 hover:text-purple-900 transition-colors"
       >
         <span className="text-2xl mr-2">🎓</span>
-        AI Stress Assessment (optional)
+        Stress Assessment (optional)
         <span className="ml-2">{showStressPredictor ? '▼' : '▶'}</span>
       </button>
       
@@ -283,7 +295,67 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
             {status.message}
           </div>
           
-          {/* Input Controls */}
+          {/* Assessment Method Selection */}
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">Choose Assessment Method:</h4>
+            <div className="space-y-3">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="assessmentMethod"
+                  checked={!useManualRating}
+                  onChange={() => setUseManualRating(false)}
+                  className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                />
+                <span className="text-gray-700">
+                  <span className="font-medium">AI Assessment</span> - Answer stress, depression, and anxiety questions for AI analysis
+                </span>
+              </label>
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="assessmentMethod"
+                  checked={useManualRating}
+                  onChange={() => setUseManualRating(true)}
+                  className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                />
+                <span className="text-gray-700">
+                  <span className="font-medium">Manual Rating</span> - Rate your own anxiety level directly
+                </span>
+              </label>
+            </div>
+          </div>
+          
+          {/* Manual Anxiety Rating */}
+          {useManualRating && (
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+              <label className="flex items-center text-base font-semibold text-blue-800 mb-3">
+                <span className="text-xl mr-2">💭</span>
+                Your Anxiety Rating (0.0 = No Anxiety, 1.0 = High Anxiety)
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={manualAnxietyScore}
+                onChange={(e) => setManualAnxietyScore(parseFloat(e.target.value))}
+                className="w-full h-3 bg-blue-200 rounded-lg appearance-none cursor-pointer mb-3"
+              />
+              <div className="flex justify-between text-sm text-blue-700 mb-2">
+                <span>No Anxiety (0.0)</span>
+                <span>Moderate (0.5)</span>
+                <span>High Anxiety (1.0)</span>
+              </div>
+              <div className="text-center">
+                <span className="text-xl font-bold text-blue-700">{manualAnxietyScore.toFixed(2)}</span>
+                <span className="text-sm text-blue-600 ml-2">({Math.round(manualAnxietyScore * 100)}%)</span>
+              </div>
+            </div>
+          )}
+          
+          {/* AI Input Controls */}
+          {!useManualRating && (
           <div className="space-y-6">
             {/* Stress Level */}
             <div className="bg-red-50 p-4 rounded-xl border border-red-100">
@@ -342,19 +414,23 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Predict Button */}
           <button
             type="button"
             onClick={predict}
-            disabled={!model}
+            disabled={!useManualRating && !model}
             className={`w-full py-3 px-6 rounded-xl font-bold text-base transition-all duration-300 ${
-              model 
+              (useManualRating || model) 
                 ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:shadow-lg' 
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
-            {model ? 'Analyze Wellbeing ✨' : 'Loading Model...'}
+            {useManualRating 
+              ? 'Analyze Manual Rating ✨' 
+              : (model ? 'Analyze Wellbeing ✨' : 'Loading Model...')
+            }
           </button>
 
           {/* Result */}
@@ -362,8 +438,14 @@ const StressPredictor = forwardRef(({ onStressResult }, ref) => {
             <div className={`p-6 rounded-xl text-center transition-all duration-500 ${getResultColors()}`}>
               <div className="text-4xl mb-3">{stressResult.emoji}</div>
               <div className="text-xl font-bold mb-2">{stressResult.category}</div>
-              <div className="text-lg mb-3">Lifelong Anxiety Score: {stressResult.percentage}% (Scale: 50-100%)</div>
-              <div className="text-sm mb-4 opacity-90">Score: {stressResult.lifelongScore} | Raw Model: {stressResult.rawModelOutput}</div>
+              <div className="text-lg mb-3">Anxiety Score: {stressResult.percentage}% (Scale: 0-100%, higher = more anxiety)</div>
+              <div className="text-sm mb-2 opacity-90">
+                {stressResult.isManualRating ? (
+                  <>Assessment Type: Manual Self-Rating | Score: {stressResult.lifelongScore}</>
+                ) : (
+                  <>Assessment Type: AI Analysis | Score: {stressResult.lifelongScore} | Raw Model: {stressResult.rawModelOutput}</>
+                )}
+              </div>
               <div className="text-sm mb-4 opacity-90">{stressResult.message}</div>
               
               {/* Reflection Questions with Input Fields */}

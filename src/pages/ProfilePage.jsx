@@ -16,6 +16,36 @@ import BadgeDisplay from '../components/BadgeDisplay'
 import PlantCompanion from '../components/PlantCompanion'
 import PlantShop from '../components/PlantShop'
 
+const DEFAULT_QUESTIONS = [
+  // Daily Check-In (short, trackable)
+  "How would you rate your overall mood today?",
+  "How well did you sleep last night (quality)?",
+  "How many hours did you sleep last night?",
+  "How much energy do you feel you have right now?",
+  "Did you exercise or move your body today?",
+  "Did you eat balanced, nutritious meals today?",
+  "Did you smoke or vape today?",
+  "Did you drink alcohol today?",
+  "Did you use recreational drugs today?",
+  "Did you practice any relaxation (breathing, meditation, journaling) today?",
+  "How stressed did you feel today?",
+  "Did you feel motivated to complete your tasks today?",
+  "How often did you laugh or smile today?",
+  "Did you spend meaningful time outdoors today?",
+  "Did you feel physically tense (headaches, stomach issues, tight muscles) today?",
+  // Weekly Reflection (broader awareness)
+  "How often did you feel lonely this week?",
+  "When was the last time you talked to a close friend or family member?",
+  "Did you spend time with people who make you feel supported this week?",
+  "Did you feel proud of something you accomplished this week?",
+  "How many days this week did you feel overwhelmed?",
+  "How hopeful do you feel about the upcoming week?",
+  "Did you set aside time for a hobby or personal interest this week?",
+  "How often did you feel anxious this week?",
+  "Did you notice any recurring negative thoughts this week?",
+  "Did you feel like yourself this week?"
+]
+
 const ProfilePage = () => {
   const [entries, setEntries] = useState([])
   const [achievements, setAchievements] = useState({})
@@ -24,6 +54,9 @@ const ProfilePage = () => {
   const [recentTransactions, setRecentTransactions] = useState([])
   const [earningsByCategory, setEarningsByCategory] = useState({})
   const [showPlantShop, setShowPlantShop] = useState(false)
+  const [customQuestions, setCustomQuestions] = useState([])
+  const [showCustomQuestions, setShowCustomQuestions] = useState(false)
+  const [newQuestion, setNewQuestion] = useState('')
 
   useEffect(() => {
     const savedEntries = JSON.parse(localStorage.getItem('mentalHealthEntries') || '[]')
@@ -36,6 +69,9 @@ const ProfilePage = () => {
     // Load currency data
     loadCurrencyData()
     setEarningsByCategory(getEarningsByCategory())
+    
+    // Load custom questions
+    loadCustomQuestions()
   }, [])
 
   useEffect(() => {
@@ -53,6 +89,53 @@ const ProfilePage = () => {
     const transactions = getTransactionHistory()
     setRecentTransactions(transactions)
     setLifetimeEarned(transactions.reduce((sum, t) => sum + (t.amount > 0 ? t.amount : 0), 0))
+  }
+
+  const loadCustomQuestions = () => {
+    const saved = localStorage.getItem('customJournalQuestions')
+    if (saved) {
+      setCustomQuestions(JSON.parse(saved))
+    } else {
+      // Initialize with default questions
+      setCustomQuestions([...DEFAULT_QUESTIONS])
+      localStorage.setItem('customJournalQuestions', JSON.stringify([...DEFAULT_QUESTIONS]))
+    }
+  }
+
+  const saveCustomQuestions = (questions) => {
+    localStorage.setItem('customJournalQuestions', JSON.stringify(questions))
+    setCustomQuestions(questions)
+  }
+
+  const addCustomQuestion = () => {
+    if (newQuestion.trim()) {
+      const updatedQuestions = [...customQuestions, newQuestion.trim()]
+      saveCustomQuestions(updatedQuestions)
+      setNewQuestion('')
+    }
+  }
+
+  const removeCustomQuestion = (index) => {
+    const updatedQuestions = customQuestions.filter((_, i) => i !== index)
+    saveCustomQuestions(updatedQuestions)
+  }
+
+  const toggleQuestionSelection = (question) => {
+    const savedActiveQuestions = JSON.parse(localStorage.getItem('activeJournalQuestions') || '[]')
+    let updatedActive
+    
+    if (savedActiveQuestions.includes(question)) {
+      updatedActive = savedActiveQuestions.filter(q => q !== question)
+    } else {
+      updatedActive = [...savedActiveQuestions, question]
+    }
+    
+    localStorage.setItem('activeJournalQuestions', JSON.stringify(updatedActive))
+  }
+
+  const resetToDefaultQuestions = () => {
+    saveCustomQuestions([...DEFAULT_QUESTIONS])
+    localStorage.setItem('activeJournalQuestions', JSON.stringify([...DEFAULT_QUESTIONS]))
   }
 
   const handlePlantPurchase = (result) => {
@@ -179,6 +262,81 @@ const ProfilePage = () => {
 
       {/* Badges */}
       <BadgeDisplay badges={badges} />
+
+      {/* Custom Journal Questions Section */}
+      <div className="mb-12 mt-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center">
+              <span className="text-3xl mr-3">📝</span>
+              Journal Questions
+            </h3>
+            <button 
+              onClick={() => setShowCustomQuestions(!showCustomQuestions)}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+            >
+              {showCustomQuestions ? 'Hide' : 'Manage'}
+            </button>
+          </div>
+          
+          {showCustomQuestions && (
+            <div className="space-y-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex gap-3 mb-4">
+                  <input
+                    type="text"
+                    value={newQuestion}
+                    onChange={(e) => setNewQuestion(e.target.value)}
+                    placeholder="Add a new journal question..."
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    onKeyPress={(e) => e.key === 'Enter' && addCustomQuestion()}
+                  />
+                  <button 
+                    onClick={addCustomQuestion} 
+                    className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                  >
+                    Add
+                  </button>
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <button 
+                    onClick={resetToDefaultQuestions} 
+                    className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+                  >
+                    Reset to Defaults
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    {customQuestions.length} questions available
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-3">Available Questions:</h4>
+                <p className="text-sm text-gray-600 mb-4">
+                  These questions will appear as prompts in your daily journal entries to help guide your reflection.
+                </p>
+                
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {customQuestions.map((question, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
+                      <span className="text-gray-700 flex-1 mr-3">{question}</span>
+                      <button 
+                        onClick={() => removeCustomQuestion(index)}
+                        className="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                        title="Remove question"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

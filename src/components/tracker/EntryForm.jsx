@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import MoodSelector from './MoodSelector'
 import MetricsInput from './MetricsInput'
 import StressPredictor from './StressPredictor'
@@ -9,6 +9,9 @@ const EntryForm = ({ onSubmit }) => {
   const [sleepHours, setSleepHours] = useState('')
   const [exerciseMinutes, setExerciseMinutes] = useState('')
   const [stressData, setStressData] = useState(null)
+  const [customQuestions, setCustomQuestions] = useState([])
+  const [showQuestions, setShowQuestions] = useState(false)
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null)
   const stressPredictorRef = useRef()
 
   const moods = [
@@ -18,6 +21,20 @@ const EntryForm = ({ onSubmit }) => {
     { emoji: '😔', label: 'Low', value: 'low', color: 'bg-orange-50 border-orange-200 hover:border-orange-300 hover:bg-orange-100' },
     { emoji: '😞', label: 'Struggling', value: 'struggling', color: 'bg-red-50 border-red-200 hover:border-red-300 hover:bg-red-100' }
   ]
+
+  // Load custom questions from localStorage
+  useEffect(() => {
+    const savedQuestions = localStorage.getItem('customJournalQuestions')
+    if (savedQuestions) {
+      setCustomQuestions(JSON.parse(savedQuestions))
+    }
+  }, [])
+
+  const handleQuestionSelect = (question, index) => {
+    setNotes(question)
+    setSelectedQuestionIndex(index)
+    setShowQuestions(false)
+  }
 
   const handleStressResult = (stressResult) => {
     setStressData(stressResult)
@@ -51,6 +68,7 @@ const EntryForm = ({ onSubmit }) => {
     setSleepHours('')
     setExerciseMinutes('')
     setStressData(null)
+    setSelectedQuestionIndex(null)
     
     // Reset stress predictor component if it exists
     if (stressPredictorRef.current && stressPredictorRef.current.resetResult) {
@@ -81,12 +99,47 @@ const EntryForm = ({ onSubmit }) => {
           setExerciseMinutes={setExerciseMinutes}
         />
 
-        {/* Notes */}
+        {/* Journal Questions & Notes */}
         <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-          <label className="flex text-lg font-semibold text-blue-800 mb-4 items-center">
-            <span className="text-2xl mr-2">📝</span>
-            Notes (optional):
-          </label>
+          <div className="flex items-center justify-between mb-4">
+            <label className="flex text-lg font-semibold text-blue-800 items-center">
+              <span className="text-2xl mr-2">📝</span>
+              Journal & Notes
+            </label>
+            {customQuestions.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowQuestions(!showQuestions)}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {showQuestions ? 'Hide Questions' : 'Journal Prompts'}
+              </button>
+            )}
+          </div>
+
+          {/* Custom Questions Dropdown */}
+          {showQuestions && customQuestions.length > 0 && (
+            <div className="mb-4 bg-white rounded-lg border border-blue-200 p-4">
+              <h4 className="text-sm font-semibold text-blue-700 mb-3">Choose a journal prompt to get started:</h4>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {customQuestions.map((question, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    onClick={() => handleQuestionSelect(question, index)}
+                    className={`w-full text-left p-3 rounded-lg border transition-colors text-sm ${
+                      selectedQuestionIndex === index
+                        ? 'bg-blue-100 border-blue-300 text-blue-800'
+                        : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-blue-50 hover:border-blue-200'
+                    }`}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -94,6 +147,12 @@ const EntryForm = ({ onSubmit }) => {
             className="w-full p-4 border-2 border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-200 focus:border-blue-400 transition-all text-lg resize-none"
             placeholder="What's on your mind? Any specific events or feelings you want to note..."
           />
+          
+          {customQuestions.length === 0 && (
+            <p className="text-blue-600 text-sm mt-2">
+              💡 Tip: Add custom journal questions in your Profile to get personalized writing prompts here!
+            </p>
+          )}
         </div>
 
         {/* Stress Predictor */}

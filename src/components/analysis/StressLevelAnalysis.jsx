@@ -8,7 +8,7 @@ const StressLevelAnalysis = ({ stressStats, chartData }) => {
     <div className="bg-white rounded-2xl shadow-xl p-8 mb-12 border border-gray-100">
       <h2 className="text-2xl font-bold text-gray-800 mb-8 flex items-center">
         <span className="text-3xl mr-3">🧠</span>
-        AI Stress Assessment
+        Stress Assessment
       </h2>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
